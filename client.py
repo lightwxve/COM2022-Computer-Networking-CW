@@ -1,5 +1,5 @@
 # Title: Festival Greeting Protocol
-#File: client.py
+# File: client.py
 # Author: Nilesh SUjan
 # Last edit: May 8th, 2022
 
@@ -141,16 +141,16 @@ def optIn():
 
 
 def sendPacket(packet, clientaddress):
-    success = False
+    success = False #Create a boolean variable
 
-    while success == False:
-        try:
-            clientSock.sendto(packet, clientaddress)
-            success == True
+    while success == False: #While the variable is false
+        try: #Try
+            clientSock.sendto(packet, clientaddress) #Sending client the packet
+            success == True #If not exceptions then it has succeeded and the loop can break
             break
-        except clientSock.timeout as inst:
-            success == False
-            print("PACKET TIMED OUT")
+        except clientSock.timeout as timeout: #If it times out
+            success == False #Set variable to false to try again
+            print("PACKET TIME OUT: ", timeout)
             print("RESENDING....")
             continue
 
@@ -233,7 +233,7 @@ def isCorrupt(packet):
     else:
         return True  # If there are not equal then the packet is corrupted
 
-# Error catch function to check if a packet has been acknowledged by checking the acknowledgemen flag
+# Error catch function to check if a packet has been acknowledged by checking the acknowledgement flag
 
 
 def checkAcknowldgement(packet):
@@ -265,9 +265,13 @@ while True:
 
     if isCorrupt(acknowledgement_packet):  # Check if the packet is corrupted
         print("PACKET RECEIVED WAS CORRUPTED...")
+        print("RESTARTING...")
+        main()
     # Check if packet was acknowledged
     elif not checkAcknowldgement(acknowledgement_packet):
         print("PACKET WAS NOT ACKNOWLEDGED")
+        print("RESTARTING...")
+        main()
     else:
         print("ACKNOWLEDGED PACKET")
 
@@ -276,6 +280,8 @@ while True:
 
     if isCorrupt(greeting_packet):  # Check if the packet is corrupted
         print("PACKET RECEIVED WAS CORRUPTED....")
+        print("RESTARTING...")
+        main()
     else:
         print("PACKET RECEIVED SUCCESSFULLY")
         # Get the payload length and convert it from bytes to int to get the payload
