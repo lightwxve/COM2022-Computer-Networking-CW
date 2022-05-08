@@ -236,7 +236,7 @@ def start():
             print("SENDING ACCESS DENIED TO CLIENT")
             sendPacket(fail_packet, addr)  # Send the fail packet
         else:
-            print("VALID CLIENT ADDRESS: ", addr)
+            print("VALID CLIENT ADDRESS: ", addr[0])
             print("CONNECTION ESTABLISHED")
 
             address = addr  # Get the address
