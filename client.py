@@ -294,7 +294,6 @@ def main():
                 [:pay_len])  # Print the message from the server
             break  # Stop listening to requests
             continue
-    
     closeSocket()  # Close the connection
 
 main()  # Run the main function
