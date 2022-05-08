@@ -20,7 +20,7 @@ clientSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 
 def closeSocket():
-    clientSock.close()
+    clientSock.close() # Close the client socket
 
 # Festival enumeration for each unique festival
 
@@ -71,7 +71,7 @@ class DuplicateError(Error):
 
 def checkIfDuplicates_1(listOfElems):
     ''' Check if given list contains any duplicates '''
-    if len(listOfElems) == len(set(listOfElems)):
+    if len(listOfElems) == len(set(listOfElems)): # Build a set using the list to check if there are duplicates
         return False
     else:
         return True
@@ -158,10 +158,10 @@ def sendPacket(packet, clientaddress):
 
 
 def generatecheckSum(packet):
-    h = hashlib.new('md5')
-    h.update(pickle.dumps(packet))
+    h = hashlib.new('md5') #Takes a sequence of bytes as input and returns the 128-bit hash value as output.
+    h.update(pickle.dumps(packet)) #Convert to byte stream
 
-    return h.digest()
+    return h.digest() #Encode data in byte format.
 
 # Function to create a packet given the correct paramaters
 
@@ -198,16 +198,7 @@ def createPacket(sequence_number, acknowledgement_flag, payload):
 
     return packet  # Return the packet
 
-# Helper function to handle corrupted packets
-
-
-def handleCorruptPacket(address):
-    failString = "Client receieved a corrupt packet"
-    packet = createPacket(0, 0, failString)
-    sendPacket(packet, address)
-
 # Function to check if the packet is corrupted
-
 
 def isCorrupt(packet):
     # Unpack the first 4 bytes which should be the sequence number as specified by the RFC
@@ -237,12 +228,12 @@ def isCorrupt(packet):
 
 
 def checkAcknowldgement(packet):
-    ack_flag = int.from_bytes(packet[4:8], "big")
+    acknowledgement_flag = int.from_bytes(packet[4:8], "big") # Get the acknowledgement flag from the packet and convert it to integer
 
-    if ack_flag == 1:
-        return True
+    if acknowledgement_flag == 1: # Compare the flag to "1" which means "understood"
+        return True # Return yes meaning it was acknowledged
     else:
-        return False
+        return False # Packet was not acknowledged
 
 
 # Main entry point of the program
@@ -266,12 +257,12 @@ while True:
     if isCorrupt(acknowledgement_packet):  # Check if the packet is corrupted
         print("PACKET RECEIVED WAS CORRUPTED...")
         print("RESTARTING...")
-        main()
+        main() # Restart the protocol from the top
     # Check if packet was acknowledged
     elif not checkAcknowldgement(acknowledgement_packet):
         print("PACKET WAS NOT ACKNOWLEDGED")
         print("RESTARTING...")
-        main()
+        main() # Restart the protocol from the top
     else:
         print("ACKNOWLEDGED PACKET")
 
@@ -281,7 +272,7 @@ while True:
     if isCorrupt(greeting_packet):  # Check if the packet is corrupted
         print("PACKET RECEIVED WAS CORRUPTED....")
         print("RESTARTING...")
-        main()
+        main() # Restart the protocol from the top
     else:
         print("PACKET RECEIVED SUCCESSFULLY")
         # Get the payload length and convert it from bytes to int to get the payload

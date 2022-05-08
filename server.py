@@ -96,7 +96,7 @@ def sendPacket(packet, clientaddress):
 
 
 def closeSocket():
-    serverSock.close()
+    serverSock.close() #Close the server socket
 
 # Main function that gets the requested festival
 
@@ -172,10 +172,10 @@ def getFestival(listOfFestivalsOptedIn, clientaddress):
 
 
 def generatecheckSum(packet):
-    h = hashlib.new('md5')
-    h.update(pickle.dumps(packet))
+    h = hashlib.new('md5') #Takes a sequence of bytes as input and returns the 128-bit hash value as output.
+    h.update(pickle.dumps(packet)) #Convert to byte stream
 
-    return h.digest()
+    return h.digest() #Encode data in byte format.
 
 
 def isCorrupt(packet):
@@ -207,12 +207,12 @@ def isCorrupt(packet):
 # Error catch function to check if a packet has been acknowledged by checking the acknowledgement flag
 
 def checkAcknowldgement(packet):
-    ack_flag = int.from_bytes(packet[4:8], "big")
+    acknowledgement_flag = int.from_bytes(packet[4:8], "big") # Get the acknowledgement flag from the packet and convert it to integer
 
-    if ack_flag == 1:
-        return True
+    if acknowledgement_flag == 1: # Compare the flag to "1" which means "understood"
+        return True # Return yes meaning it was acknowledged
     else:
-        return False
+        return False # Packet was not acknowledged
 
 # Entry point into program
 
@@ -221,16 +221,18 @@ def start():
     while True:  # Listen to client requests
         print("SERVER RUNNING")  # Print message to show server is running
         data, addr = serverSock.recvfrom(1024)  # Receive the client data
-        address = addr
-        packet = data  # Separate the packet and the address
+        address = addr # Get the address
+        packet = data  # Get the packet
 
         if not isCorrupt(packet):  # First check if the packet is corrupted, if it isn't then
             print("REQUEST RECEIVED!")
             print("SENDING ACKNOWLEDGEMENT PACKET...")
-            ack_packet = createPacket(0, 1, " ")  # Send an ack back
-            sendPacket(ack_packet, address)
+            ack_packet = createPacket(0, 1, " ")  # Create an ack packet with ack flag as 0
+            sendPacket(ack_packet, address) # Send the ack packet
         else:
             print("ERROR... CORRUPTED PACKET. ASKING CLIENT TO RESEND...")
+            ack_packet = createPacket(0, 0, " ")  # Create an ack packet with ack flag as 0
+            sendPacket(ack_packet, address) # Send the ack packet
 
         # Get the payload len from the packet and convert to int
         pay_len = int.from_bytes(packet[8:12], "big")
