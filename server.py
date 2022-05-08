@@ -16,7 +16,7 @@ UDP_IP_ADDRESS = "127.0.0.1"
 UDP_PORT_NO = 6789
 
 # Whitelisted IPs to server
-whitelistedIPs = ["127.0.0.1","192.168.0.100"]
+whitelistedIPs = ["127.0.0.1", "192.168.0.100"]
 
 # Create a server socket using UDP
 serverSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -247,7 +247,8 @@ def start():
                 print("REQUEST RECEIVED!")
                 print("SENDING ACKNOWLEDGEMENT PACKET...")
                 # Create an ack packet with ack flag as 0
-                ack_packet = createPacket(0, 1, "SERVER ACKNOWLEDGED THE PACKET")
+                ack_packet = createPacket(
+                    0, 1, "SERVER ACKNOWLEDGED THE PACKET")
                 sendPacket(ack_packet, address)  # Send the ack packet
             else:
                 print("ERROR... CORRUPTED PACKET. ASKING CLIENT TO RESEND...")
@@ -266,8 +267,8 @@ def start():
             festivallist = [x.strip() for x in festivals.split(',')]
 
             getFestival(festivallist, addr)  # Get the correct greeting
-            
-        #break  # Stop listening to requests
+
+        break  # Stop listening to requests
     closeSocket()  # Close the connection
 
 

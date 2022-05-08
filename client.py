@@ -274,7 +274,7 @@ def main():
             # Get the payload using the payload length
             payload = acknowledgement_packet[12:pay_len+12]
             print("MESSAGE FROM SERVER: ", payload.decode("ascii")
-                [:pay_len])  # Print the message from the server
+                  [:pay_len])  # Print the message from the server
 
         greeting_packet = clientSock.recv(
             2048)  # Receieve the greeting packet
@@ -291,9 +291,10 @@ def main():
             payload = greeting_packet[12:pay_len+12]
 
             print("MESSAGE FROM SERVER: ", payload.decode("ascii")
-                [:pay_len])  # Print the message from the server
+                  [:pay_len])  # Print the message from the server
             break  # Stop listening to requests
             continue
     closeSocket()  # Close the connection
+
 
 main()  # Run the main function
