@@ -244,50 +244,57 @@ def checkAcknowldgement(packet):
 
 # Main entry point of the program
 def main():
-    festivals = optIn()  # Get the list of festivals the user wants
-    # Crete a UDP packet with the payload as the festivals
-    UDPPacket = createPacket(0, 0, festivals)
-    # Send the payload to the server
-    sendPacket(UDPPacket, (UDP_IP_ADDRESS, UDP_PORT_NO))
-    print('WAITING FOR ACK....')  # Wait for acknowledgement
+    while True:
+        print("CLIENT RUNNING")
+        festivals = optIn()  # Get the list of festivals the user wants
+        # Crete a UDP packet with the payload as the festivals
+        UDPPacket = createPacket(0, 0, festivals)
+        # Send the payload to the server
+        sendPacket(UDPPacket, (UDP_IP_ADDRESS, UDP_PORT_NO))
+        print('WAITING FOR ACK....')  # Wait for acknowledgement
 
+        # Listen for the server's response
+        acknowledgement_packet = clientSock.recv(
+            1024)  # Receieve the acknowledgement packet
+
+        if isCorrupt(acknowledgement_packet):  # Check if the packet is corrupted
+            print("PACKET RECEIVED WAS CORRUPTED...")
+            print("RESENDING PACKET..")
+            sendPacket(UDPPacket, (UDP_IP_ADDRESS, UDP_PORT_NO))
+            print("PACKET RESENT")
+        # Check if packet was acknowledged
+        elif not checkAcknowldgement(acknowledgement_packet):
+            print("PACKET WAS NOT ACKNOWLEDGED")
+            print("RESENDING PACKET..")
+            main()  # Restart the protocol from the top
+        else:
+            print("ACKNOWLEDGED PACKET")
+            # Get the payload length and convert it from bytes to int to get the payload
+            pay_len = int.from_bytes(acknowledgement_packet[8:12], "big")
+            # Get the payload using the payload length
+            payload = acknowledgement_packet[12:pay_len+12]
+            print("MESSAGE FROM SERVER: ", payload.decode("ascii")
+                [:pay_len])  # Print the message from the server
+
+        greeting_packet = clientSock.recv(
+            2048)  # Receieve the greeting packet
+
+        if isCorrupt(greeting_packet):  # Check if the packet is corrupted
+            print("PACKET RECEIVED WAS CORRUPTED....")
+            print("RESENDING PACKET..")
+            main()  # Restart the protocol from the top
+        else:
+            print("PACKET RECEIVED SUCCESSFULLY")
+            # Get the payload length and convert it from bytes to int to get the payload
+            pay_len = int.from_bytes(greeting_packet[8:12], "big")
+            # Get the payload using the payload length
+            payload = greeting_packet[12:pay_len+12]
+
+            print("MESSAGE FROM SERVER: ", payload.decode("ascii")
+                [:pay_len])  # Print the message from the server
+            break  # Stop listening to requests
+            continue
+    
+    closeSocket()  # Close the connection
 
 main()  # Run the main function
-
-# Listen for the server's response
-while True:
-
-    acknowledgement_packet = clientSock.recv(
-        1024)  # Receieve the acknowledgement packet
-
-    if isCorrupt(acknowledgement_packet):  # Check if the packet is corrupted
-        print("PACKET RECEIVED WAS CORRUPTED...")
-        print("RESTARTING...")
-        main()  # Restart the protocol from the top
-    # Check if packet was acknowledged
-    elif not checkAcknowldgement(acknowledgement_packet):
-        print("PACKET WAS NOT ACKNOWLEDGED")
-        print("RESTARTING...")
-        main()  # Restart the protocol from the top
-    else:
-        print("ACKNOWLEDGED PACKET")
-
-    greeting_packet = clientSock.recv(
-        2048)  # Receieve the greeting packet
-
-    if isCorrupt(greeting_packet):  # Check if the packet is corrupted
-        print("PACKET RECEIVED WAS CORRUPTED....")
-        print("RESTARTING...")
-        main()  # Restart the protocol from the top
-    else:
-        print("PACKET RECEIVED SUCCESSFULLY")
-        # Get the payload length and convert it from bytes to int to get the payload
-        pay_len = int.from_bytes(greeting_packet[8:12], "big")
-        # Get the payload using the payload length
-        payload = greeting_packet[12:pay_len+12]
-
-        print("MESSAGE FROM SERVER: ", payload.decode("ascii")
-              [:pay_len])  # Print the message from the server
-        break  # Stop listening to requests
-
-closeSocket()  # Close the connection
