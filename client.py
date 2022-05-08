@@ -275,9 +275,12 @@ def main():
             payload = acknowledgement_packet[12:pay_len+12]
             print("MESSAGE FROM SERVER: ", payload.decode("ascii")
                   [:pay_len])  # Print the message from the server
-
-        greeting_packet = clientSock.recv(
-            2048)  # Receieve the greeting packet
+            
+        try:
+            greeting_packet = clientSock.recv(2048)
+        except socket.timeout as timeout:
+            print("PACKET TIMED OUT: ", timeout)
+            continue
 
         if isCorrupt(greeting_packet):  # Check if the packet is corrupted
             print("PACKET RECEIVED WAS CORRUPTED....")

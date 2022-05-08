@@ -253,8 +253,9 @@ def start():
             else:
                 print("ERROR... CORRUPTED PACKET. ASKING CLIENT TO RESEND...")
                 # Create an ack packet with ack flag as 0
-                ack_packet = createPacket(0, 0, " ")
+                ack_packet = createPacket(0, 1, " ")
                 sendPacket(ack_packet, address)  # Send the ack packet
+                start() # Go back to the start
 
             # Get the payload len from the packet and convert to int
             pay_len = int.from_bytes(packet[8:12], "big")
