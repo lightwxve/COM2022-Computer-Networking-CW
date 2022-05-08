@@ -47,14 +47,16 @@ class Protocol:
 
     def add_str(self, val):
         bytes_val = bytearray(val.encode(encoding='utf8'))
-        bytes_length = bytearray(len(bytes_val).to_bytes(2, byteorder='little'))
+        bytes_length = bytearray(
+            len(bytes_val).to_bytes(2, byteorder='little'))
         self.bs += (bytes_length + bytes_val)
 
     def get_pck_not_head(self):
         return self.bs
 
     def get_pck_has_head(self):
-        bytes_pck_length = bytearray(len(self.bs).to_bytes(4, byteorder='little'))
+        bytes_pck_length = bytearray(
+            len(self.bs).to_bytes(4, byteorder='little'))
         return bytes_pck_length + self.bs
 
 

@@ -16,7 +16,8 @@ UDP_IP_ADDRESS = "127.0.0.1"
 UDP_PORT_NO = 6789
 
 # Whitelisted IPs to server
-whitelistedIPs = ["127.0.0.1"]
+whitelistedIPs = ["127.0.0.1", "192.168.1.253",
+                  "192.168.1.253", "86.137.54.205"]
 
 # Create a server socket using UDP
 serverSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -85,6 +86,7 @@ def sendPacket(packet, clientaddress):
             # Sending client the packet
             serverSock.sendto(packet, clientaddress)
             success == True  # If not exceptions then it has succeeded and the loop can break
+            print("SUCCESSFULLY SENT PACKET")
             break
         except serverSock.timeout as timeout:  # If it times out
             success == False  # Set variable to false to try again
@@ -96,7 +98,7 @@ def sendPacket(packet, clientaddress):
 
 
 def closeSocket():
-    serverSock.close() #Close the server socket
+    serverSock.close()  # Close the server socket
 
 # Main function that gets the requested festival
 
@@ -128,6 +130,8 @@ def getFestival(listOfFestivalsOptedIn, clientaddress):
             EasterOpted = True  # Change it's boolean variable to true
             # Append the festival message of Easter to the meesage variable
             message = message + festivalMessages["Easter"] + " "
+
+    print("SENDING APPROPRIATE GREETING...")
 
     packet = createPacket(0, 0, message)  # Create a packet with the messages
     sendPacket(packet, clientaddress)  # Send the packet
@@ -172,10 +176,11 @@ def getFestival(listOfFestivalsOptedIn, clientaddress):
 
 
 def generatecheckSum(packet):
-    h = hashlib.new('md5') #Takes a sequence of bytes as input and returns the 128-bit hash value as output.
-    h.update(pickle.dumps(packet)) #Convert to byte stream
+    # Takes a sequence of bytes as input and returns the 128-bit hash value as output.
+    h = hashlib.new('md5')
+    h.update(pickle.dumps(packet))  # Convert to byte stream
 
-    return h.digest() #Encode data in byte format.
+    return h.digest()  # Encode data in byte format.
 
 
 def isCorrupt(packet):
@@ -207,12 +212,13 @@ def isCorrupt(packet):
 # Error catch function to check if a packet has been acknowledged by checking the acknowledgement flag
 
 def checkAcknowldgement(packet):
-    acknowledgement_flag = int.from_bytes(packet[4:8], "big") # Get the acknowledgement flag from the packet and convert it to integer
+    # Get the acknowledgement flag from the packet and convert it to integer
+    acknowledgement_flag = int.from_bytes(packet[4:8], "big")
 
-    if acknowledgement_flag == 1: # Compare the flag to "1" which means "understood"
-        return True # Return yes meaning it was acknowledged
+    if acknowledgement_flag == 1:  # Compare the flag to "1" which means "understood"
+        return True  # Return yes meaning it was acknowledged
     else:
-        return False # Packet was not acknowledged
+        return False  # Packet was not acknowledged
 
 # Entry point into program
 
@@ -221,30 +227,45 @@ def start():
     while True:  # Listen to client requests
         print("SERVER RUNNING")  # Print message to show server is running
         data, addr = serverSock.recvfrom(1024)  # Receive the client data
-        address = addr # Get the address
-        packet = data  # Get the packet
 
-        if not isCorrupt(packet):  # First check if the packet is corrupted, if it isn't then
-            print("REQUEST RECEIVED!")
-            print("SENDING ACKNOWLEDGEMENT PACKET...")
-            ack_packet = createPacket(0, 1, " ")  # Create an ack packet with ack flag as 0
-            sendPacket(ack_packet, address) # Send the ack packet
+        if addr[0] not in whitelistedIPs:  # Check if the client address is whitelisted
+            print("ACCESS DENIED")
+            print("Unidentified client address tried to connect to server with address: ",
+                  addr[0], " on port: ", addr[1])
+            fail_packet = createPacket(
+                0, 1, "SERVER DENIED ACCESS")  # Create a fail packet
+            sendPacket(fail_packet, address)  # Send the fail packet
         else:
-            print("ERROR... CORRUPTED PACKET. ASKING CLIENT TO RESEND...")
-            ack_packet = createPacket(0, 0, " ")  # Create an ack packet with ack flag as 0
-            sendPacket(ack_packet, address) # Send the ack packet
+            print("VALID CLIENT ADDRESS")
+            print("CONNECTION ESTABLISHED")
 
-        # Get the payload len from the packet and convert to int
-        pay_len = int.from_bytes(packet[8:12], "big")
-        # Get the payload info using the payload len
-        payload = packet[12:pay_len+12]
-        # Decode the payload to string
-        festivals = payload.decode("ascii")[:pay_len]
+            address = addr  # Get the address
+            packet = data  # Get the packet
 
-        # If it is a list then split the string by ,
-        festivallist = [x.strip() for x in festivals.split(',')]
+            # First check if the packet is corrupted, if it isn't then
+            if not isCorrupt(packet):
+                print("REQUEST RECEIVED!")
+                print("SENDING ACKNOWLEDGEMENT PACKET...")
+                # Create an ack packet with ack flag as 0
+                ack_packet = createPacket(0, 1, " ")
+                sendPacket(ack_packet, address)  # Send the ack packet
+            else:
+                print("ERROR... CORRUPTED PACKET. ASKING CLIENT TO RESEND...")
+                # Create an ack packet with ack flag as 0
+                ack_packet = createPacket(0, 0, " ")
+                sendPacket(ack_packet, address)  # Send the ack packet
 
-        getFestival(festivallist, addr)  # Get the correct greeting
+            # Get the payload len from the packet and convert to int
+            pay_len = int.from_bytes(packet[8:12], "big")
+            # Get the payload info using the payload len
+            payload = packet[12:pay_len+12]
+            # Decode the payload to string
+            festivals = payload.decode("ascii")[:pay_len]
+
+            # If it is a list then split the string by ,
+            festivallist = [x.strip() for x in festivals.split(',')]
+
+            getFestival(festivallist, addr)  # Get the correct greeting
 
         break  # Stop listening to requests
     closeSocket()  # Close the connection
