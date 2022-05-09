@@ -8,6 +8,7 @@ import hashlib
 import pickle
 import socket
 from enum import Enum
+import random
 
 # UDP protocol information
 UDP_IP_ADDRESS = "127.0.0.1"
@@ -15,6 +16,7 @@ UDP_PORT_NO = 6789
 
 # Create a client socket using UDP
 clientSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+clientSock.settimeout(60)
 
 # Function to close the socket
 
@@ -171,7 +173,7 @@ def generatecheckSum(packet):
 
 def createPacket(sequence_number, acknowledgement_flag, payload):
     # As specified in the RFC, the sequence number is 0 plus the length of the payload
-    sequence_number = 0 + len(payload)
+    sequence_number = random.randint(0,100) # Generate random seq num between 0 - 100
     acknowledgement_flag = acknowledgement_flag  # Ack flag
     payload = payload  # Payload
 
@@ -241,6 +243,18 @@ def checkAcknowldgement(packet):
     else:
         return False  # Packet was not acknowledged
 
+# Error catch function to check if the sequence number has a mismatch during transmission.
+
+def seq_mismatch(packet):
+    payload_length = int.from_bytes(packet[8:12], byteorder="big")
+    seq_num = int.from_bytes(packet[:4], byteorder="big")
+
+    newseq_num = seq_num + payload_length
+
+    if newseq_num == seq_num:
+        return False
+    else:
+        return True
 
 # Main entry point of the program
 def main():
@@ -254,8 +268,14 @@ def main():
         print('WAITING FOR ACK....')  # Wait for acknowledgement
 
         # Listen for the server's response
-        acknowledgement_packet = clientSock.recv(
-            1024)  # Receieve the acknowledgement packet
+        try:
+            acknowledgement_packet = clientSock.recv(1024)  # Receieve the acknowledgement packet
+        except socket.timeout as timeout:
+            print("PACKET TIMED OUT: ", timeout)
+            print("RESENDING PACKET..")
+            sendPacket(UDPPacket, (UDP_IP_ADDRESS, UDP_PORT_NO))
+            print("RESENT FESTIVAL REQUEST")
+            continue 
 
         if isCorrupt(acknowledgement_packet):  # Check if the packet is corrupted
             print("PACKET RECEIVED WAS CORRUPTED...")
@@ -269,13 +289,11 @@ def main():
             main()  # Restart the protocol from the top
         else:
             print("ACKNOWLEDGED PACKET")
-            # Get the payload length and convert it from bytes to int to get the payload
-            pay_len = int.from_bytes(acknowledgement_packet[8:12], "big")
-            # Get the payload using the payload length
-            payload = acknowledgement_packet[12:pay_len+12]
-            print("MESSAGE FROM SERVER: ", payload.decode("ascii")
-                  [:pay_len])  # Print the message from the server
             
+        if seq_mismatch(acknowledgement_packet) == True: # Check sequence number incase of mismatch
+            print("SEQUENCE NUMBER MISMATCH") # Print the error
+            main() # Restart client protocol
+
         try:
             greeting_packet = clientSock.recv(2048)
         except socket.timeout as timeout:

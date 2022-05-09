@@ -41,10 +41,9 @@ festivalDates = {
     "Easter": datetime.date(2022, 4, 17),
 }
 
-
 def createPacket(sequence_number, acknowledgement_flag, payload):
     # As specified in the RFC, the sequence number is 0 plus the length of the payload
-    sequence_number = 0 + len(payload)
+    sequence_number = sequence_number
     acknowledgement_flag = acknowledgement_flag  # Ack flag
     payload = payload  # Payload
 
@@ -102,7 +101,7 @@ def closeSocket():
 # Main function that gets the requested festival
 
 
-def getFestival(listOfFestivalsOptedIn, clientaddress):
+def getFestival(listOfFestivalsOptedIn, clientaddress, sequence_number):
     # Print the festivals the client wants to be opted into
     print("The client is opted into: ", listOfFestivalsOptedIn)
     EidOpted = False  # Create a boolean variable for Eid
@@ -134,7 +133,7 @@ def getFestival(listOfFestivalsOptedIn, clientaddress):
 
     print("SENDING APPROPRIATE GREETING...")
 
-    packet = createPacket(0, 0, message)  # Create a packet with the messages
+    packet = createPacket(sequence_number, 0, message)  # Create a packet with the messages
     sendPacket(packet, clientaddress)  # Send the packet
 
     # Proprietary server extension
@@ -148,24 +147,24 @@ def getFestival(listOfFestivalsOptedIn, clientaddress):
         if EidOpted:  # If the client is opted into Eid then
             if currentDate == festivalDates["Eid"]:  # If today is Eid
                 packet = createPacket(
-                    0, 0, festivalMessages["Eid"])  # Send the festival message for Eid
+                    sequence_number, 0, festivalMessages["Eid"])  # Send the festival message for Eid
                 sendPacket(packet, clientaddress)
         if DiwaliOpted:  # If the client is opted into Diwali then
             if currentDate == festivalDates["Diwali"]:  # If today is Diwali
                 packet = createPacket(
-                    0, 0, festivalMessages["Diwali"])
+                    sequence_number, 0, festivalMessages["Diwali"])
                 # Send the festival message for Diwali
                 sendPacket(packet, clientaddress)
         if ChristmasOpted:  # If the client is opted into Christmas then
             # If today is Christmas
             if currentDate == festivalDates["Christmas"]:
-                packet = createPacket(0, 0, festivalMessages["Christmas"])
+                packet = createPacket(sequence_number, 0, festivalMessages["Christmas"])
                 # Send the festival message for Christmas
                 sendPacket(packet, clientaddress)
         if EasterOpted:  # If the client is opted into Easter then
             if currentDate == festivalDates["Easter"]:  # If today is Easter
                 packet = createPacket(
-                    0, 0, festivalMessages["Easter"])
+                    sequence_number, 0, festivalMessages["Easter"])
                 # Send the festival message for Easter
                 sendPacket(packet, clientaddress)
 
@@ -248,9 +247,12 @@ def start():
             if not isCorrupt(packet):
                 print("REQUEST RECEIVED!")
                 print("SENDING ACKNOWLEDGEMENT PACKET...")
-                # Create an ack packet with ack flag as 0
+                # Convert the payload length currrently in bytes to integer
+                payload_length = int.from_bytes(packet[8:12], byteorder='big')
+                # Convert the payload length currrently in bytes to integer
+                seq_number = int.from_bytes(packet[0:4], byteorder='big')
                 ack_packet = createPacket(
-                    0, 1, "SERVER ACKNOWLEDGED THE PACKET")
+                    seq_number+payload_length, 1, "")
                 sendPacket(ack_packet, address)  # Send the ack packet
             else:
                 print("ERROR... CORRUPTED PACKET. ASKING CLIENT TO RESEND...")
@@ -269,7 +271,7 @@ def start():
             # If it is a list then split the string by ,
             festivallist = [x.strip() for x in festivals.split(',')]
 
-            getFestival(festivallist, addr)  # Get the correct greeting
+            getFestival(festivallist, addr, seq_number)  # Get the correct greeting
 
         break  # Stop listening to requests
     closeSocket()  # Close the connection
