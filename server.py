@@ -16,7 +16,7 @@ UDP_IP_ADDRESS = "127.0.0.1"
 UDP_PORT_NO = 6789
 
 # Whitelisted IPs to server
-whitelistedIPs = ["127.0.0.1", "192.168.0.100"]
+whitelistedIPs = ["127.0.0.1", "192.168.0.100","192.168.1.72"]
 
 # Create a server socket using UDP
 serverSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -129,6 +129,8 @@ def getFestival(listOfFestivalsOptedIn, clientaddress):
             EasterOpted = True  # Change it's boolean variable to true
             # Append the festival message of Easter to the meesage variable
             message = message + festivalMessages["Easter"] + " "
+        else:
+            message = message + "Invalid festival" # In the event of an invalid festival being passed through
 
     print("SENDING APPROPRIATE GREETING...")
 
